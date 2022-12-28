@@ -65,12 +65,84 @@ const drawCells = () => {
     ctx.stroke();
 };
 
-const renderLoop = () => {
-    universe.tick();
-    drawGrid();
-    drawCells();
+let painting = false;
+let erasing = false;
+addEventListener('mousedown', event => {
+    if ((event.button === 0) && (!painting)) {
+        painting = true;
+    } else if ((event.button === 2) && (!erasing)) {
+        erasing = true;
+    }
+});
+addEventListener('mouseup', event => {
+    if ((event.button === 0) && (painting)) {
+        painting = false;
+    } else if ((event.button === 2) && (erasing)) {
+        erasing = false;
+    }
+});
 
+canvas.addEventListener("mousemove", event => {
+    const boundingRect = canvas.getBoundingClientRect();
+
+    const scaleX = canvas.width / boundingRect.width;
+    const scaleY = canvas.height / boundingRect.height;
+
+    const canvasLeft = (event.clientX - boundingRect.left) * scaleX;
+    const canvasTop = (event.clientY - boundingRect.top) * scaleY;
+
+    const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
+    const col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1);
+    if (painting) {
+        universe.set_cell(row, col);
+        // send draw calls again to update potentially paused canvas
+        drawGrid();
+        drawCells();
+    } else if (erasing) {
+        universe.unset_cell(row, col);
+        drawGrid();
+        drawCells();
+    }
+});
+
+let paused = false;
+let animationId = null;
+
+const playPauseButton = document.getElementById("play-pause");
+
+const play = () => {
+    paused = false;
+    playPauseButton.textContent = "⏸";
     requestAnimationFrame(renderLoop);
+}
+
+const pause = () => {
+    playPauseButton.textContent = "▶";
+    cancelAnimationFrame(animationId);
+    paused = true;
 };
 
-requestAnimationFrame(renderLoop);
+playPauseButton.addEventListener("click", event => {
+    if (paused) {
+        play();
+    } else {
+        pause();
+    }
+});
+
+const framerateSlider = document.getElementById("framerate");
+
+const renderLoop = () => {
+    universe.tick();
+    let _animInterval = 1000 / framerateSlider.value;
+
+    setTimeout(() => {
+        if (!paused) {
+            drawGrid();
+            drawCells();
+            animationId = requestAnimationFrame(renderLoop);
+        }
+    }, _animInterval);
+};
+
+play();
