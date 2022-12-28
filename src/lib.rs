@@ -10,15 +10,14 @@ use wasm_bindgen::prelude::*;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-extern {
-}
+extern "C" {}
 
 #[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Cell {
     Dead = 0,
-    Alive = 1
+    Alive = 1,
 }
 
 #[wasm_bindgen]
@@ -29,18 +28,21 @@ pub struct Universe {
 }
 
 impl Universe {
+    /// Convert a pair of row/column coordinates into an index into cells.
     fn get_idx(&self, row: u32, col: u32) -> usize {
         (row * self.width + col) as usize
     }
 
+    /// Convert an index into cells into a pair of row/column coordinates.
     fn get_coord(&self, idx: usize) -> (u32, u32) {
         (idx as u32 / self.width, idx as u32 % self.width)
     }
 
+    /// Count the number of live neighbours of the cell at cells[self.get_idx(row, col)]
     fn live_neighbours(&self, row: u32, col: u32) -> u8 {
         let mut count = 0;
-        for &d_row in [self.height-1, 0, 1].iter() {
-            for &d_col in [self.width-1, 0, 1].iter() {
+        for &d_row in [self.height - 1, 0, 1].iter() {
+            for &d_col in [self.width - 1, 0, 1].iter() {
                 if (d_row == 0) && (d_col == 0) {
                     continue;
                 }
@@ -51,6 +53,18 @@ impl Universe {
             }
         }
         count
+    }
+
+    pub fn get_cells(&self) -> &Vec<Cell> {
+        &self.cells
+    }
+
+    /// Given a list of cell coordinates, set all listed cells to Alive
+    pub fn set_cells(&mut self, cells: &[(u32, u32)]) {
+        for (row, col) in cells.iter().cloned() {
+            let idx = self.get_idx(row, col);
+            self.cells[idx] = Cell::Alive;
+        }
     }
 }
 
@@ -73,35 +87,26 @@ impl Universe {
     }
 
     pub fn new(width: u32, height: u32) -> Universe {
-        let cells = (0..width * height)
-            .map(|i| {
-                if i % 2 == 0 || i % 7 == 0 {
-                    Cell::Alive
-                } else {
-                    Cell::Dead
-                }
-            })
-            .collect();
+        let cells = vec![Cell::Dead; (width * height) as usize];
 
         Universe {
             width,
             height,
-            cells
+            cells,
         }
     }
 
-    pub fn render(&self) -> String {
-        self.to_string()
-    }
-
+    /// Getter for width
     pub fn width(&self) -> u32 {
         self.width
     }
 
+    /// Getter for height
     pub fn height(&self) -> u32 {
         self.height
     }
 
+    /// Getter for raw pointer to the start of the cells vector
     pub fn cells(&self) -> *const Cell {
         self.cells.as_ptr()
     }
@@ -109,7 +114,7 @@ impl Universe {
 
 impl fmt::Display for Universe {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for idx in 0..self.width*self.height {
+        for idx in 0..self.width * self.height {
             if idx % self.width == 0 && idx > 0 {
                 write!(f, "\n")?;
             }
