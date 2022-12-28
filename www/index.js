@@ -1,5 +1,5 @@
-import { Universe, Cell } from "wasm-game-of-life";
-import { memory } from "wasm-game-of-life/wasm_game_of_life_bg";
+import {Universe, Cell} from "wasm-game-of-life";
+import {memory} from "wasm-game-of-life/wasm_game_of_life_bg";
 
 const CELL_SIZE = 5; // px
 const GRID_COLOR = "#CCCCCC";
@@ -8,13 +8,13 @@ const ALIVE_COLOR = "#000000";
 
 const pre = document.getElementById("game-of-life-canvas");
 
-const width = 128;
-const height = 96;
-const universe = Universe.new(width, height);
+const universe = Universe.new_fancy();
+const width = universe.width();
+const height = universe.height();
 
 const canvas = document.getElementById("game-of-life-canvas");
-canvas.height = (CELL_SIZE+1) * height + 1;
-canvas.width = (CELL_SIZE+1) * width + 1;
+canvas.height = (CELL_SIZE + 1) * height + 1;
+canvas.width = (CELL_SIZE + 1) * width + 1;
 const ctx = canvas.getContext('2d');
 
 const drawGrid = () => {

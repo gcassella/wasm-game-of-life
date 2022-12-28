@@ -3,6 +3,15 @@ mod utils;
 use std::fmt;
 use wasm_bindgen::prelude::*;
 
+extern crate web_sys;
+
+// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+macro_rules! log {
+    ( $( $t:tt )* ) => {
+        web_sys::console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
 #[cfg(feature = "wee_alloc")]
@@ -81,13 +90,37 @@ impl Universe {
                 (Cell::Alive, x) if x > 3 => Cell::Dead,
                 (Cell::Dead, 3) => Cell::Alive,
                 (otherwise, _) => otherwise,
-            }
+            };
         }
         self.cells = next;
     }
 
     pub fn new(width: u32, height: u32) -> Universe {
+        utils::set_panic_hook();
+        log!("Initializing {}x{} universe", width, height);
         let cells = vec![Cell::Dead; (width * height) as usize];
+
+        Universe {
+            width,
+            height,
+            cells,
+        }
+    }
+
+    pub fn new_fancy() -> Universe {
+        utils::set_panic_hook();
+        let width = 64;
+        let height = 64;
+        log!("Initializing fancy {}x{} universe", width, height);
+        let cells = (0..width * height)
+            .map(|i| {
+                if i % 2 == 0 || i % 7 == 0 {
+                    Cell::Alive
+                } else {
+                    Cell::Dead
+                }
+            })
+            .collect();
 
         Universe {
             width,
