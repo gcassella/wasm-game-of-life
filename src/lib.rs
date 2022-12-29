@@ -5,10 +5,38 @@ use wasm_bindgen::prelude::*;
 
 extern crate web_sys;
 
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
+use web_sys::console;
+
+/// A macro to provide `println!(..)`-style syntax for `console.log` logging.
 macro_rules! log {
     ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
+        console::log_1(&format!( $( $t )* ).into());
+    }
+}
+
+macro_rules! time {
+    ( $x:expr, $name:literal ) => {
+        {
+            let _timer = Timer::new($name);
+            $x
+        }
+    }
+}
+
+pub struct Timer<'a> {
+    name: &'a str,
+}
+
+impl<'a> Timer<'a> {
+    pub fn new(name: &'a str) -> Timer<'a> {
+        console::time_with_label(name);
+        Timer { name }
+    }
+}
+
+impl<'a> Drop for Timer<'a> {
+    fn drop(&mut self) {
+        console::time_end_with_label(self.name);
     }
 }
 
@@ -57,19 +85,56 @@ impl Universe {
     }
 
     /// Count the number of live neighbours of the cell at cells[self.get_idx(row, col)]
-    fn live_neighbours(&self, row: u32, col: u32) -> u8 {
+    fn live_neighbours(&self, row: u32, column: u32) -> u8 {
         let mut count = 0;
-        for &d_row in [self.height - 1, 0, 1].iter() {
-            for &d_col in [self.width - 1, 0, 1].iter() {
-                if (d_row == 0) && (d_col == 0) {
-                    continue;
-                }
-                let crow = (row + d_row) % self.height;
-                let ccol = (col + d_col) % self.width;
-                let idx = self.get_idx(crow, ccol);
-                count += self.cells[idx] as u8;
-            }
-        }
+
+        let north = if row == 0 {
+            self.height - 1
+        } else {
+            row - 1
+        };
+
+        let south = if row == self.height - 1 {
+            0
+        } else {
+            row + 1
+        };
+
+        let west = if column == 0 {
+            self.width - 1
+        } else {
+            column - 1
+        };
+
+        let east = if column == self.width - 1 {
+            0
+        } else {
+            column + 1
+        };
+
+        let nw = self.get_idx(north, west);
+        count += self.cells[nw] as u8;
+
+        let n = self.get_idx(north, column);
+        count += self.cells[n] as u8;
+
+        let ne = self.get_idx(north, east);
+        count += self.cells[ne] as u8;
+
+        let w = self.get_idx(row, west);
+        count += self.cells[w] as u8;
+
+        let e = self.get_idx(row, east);
+        count += self.cells[e] as u8;
+
+        let sw = self.get_idx(south, west);
+        count += self.cells[sw] as u8;
+
+        let s = self.get_idx(south, column);
+        count += self.cells[s] as u8;
+
+        let se = self.get_idx(south, east);
+        count += self.cells[se] as u8;
         count
     }
 
@@ -89,18 +154,24 @@ impl Universe {
 #[wasm_bindgen]
 impl Universe {
     pub fn tick(&mut self) {
+        let _timer = Timer::new("Universe::tick");
         let mut next = self.cells.clone();
-        for (idx, &cell) in self.cells.iter().enumerate() {
-            let (row, col) = self.get_coord(idx);
-            let ln = self.live_neighbours(row, col);
-            next[idx] = match (cell, ln) {
-                (Cell::Alive, x) if x < 2 => Cell::Dead,
-                (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
-                (Cell::Alive, x) if x > 3 => Cell::Dead,
-                (Cell::Dead, 3) => Cell::Alive,
-                (otherwise, _) => otherwise,
-            };
-        }
+        time!({
+            for row in 0..self.height {
+                for col in 0..self.width {
+                    let idx = self.get_idx(row, col);
+                    let cell = &self.cells[idx];
+                    let ln = self.live_neighbours(row, col);
+                    next[idx] = match (cell, ln) {
+                        (Cell::Alive, x) if x < 2 => Cell::Dead,
+                        (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
+                        (Cell::Alive, x) if x > 3 => Cell::Dead,
+                        (Cell::Dead, 3) => Cell::Alive,
+                        (otherwise, _) => *otherwise,
+                    };
+                }
+            }
+        }, "calculate next generation");
         self.cells = next;
     }
 
@@ -118,8 +189,8 @@ impl Universe {
 
     pub fn new_fancy() -> Universe {
         utils::set_panic_hook();
-        let width = 64;
-        let height = 64;
+        let width = 128;
+        let height = 128;
         log!("Initializing fancy {}x{} universe", width, height);
         let cells = (0..width * height)
             .map(|i| {
