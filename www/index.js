@@ -82,17 +82,25 @@ addEventListener('mouseup', event => {
     }
 });
 
-canvas.addEventListener("mousemove", event => {
+const get_rowcol = (x, y) => {
     const boundingRect = canvas.getBoundingClientRect();
 
     const scaleX = canvas.width / boundingRect.width;
     const scaleY = canvas.height / boundingRect.height;
 
-    const canvasLeft = (event.clientX - boundingRect.left) * scaleX;
-    const canvasTop = (event.clientY - boundingRect.top) * scaleY;
+    const canvasLeft = (x - boundingRect.left) * scaleX;
+    const canvasTop = (y - boundingRect.top) * scaleY;
 
     const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
     const col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1);
+
+    return [row, col]
+}
+
+canvas.addEventListener("mousemove", event => {
+    const rowcol = get_rowcol(event.clientX, event.clientY);
+    const row = rowcol[0];
+    const col = rowcol[1];
     if (painting) {
         universe.set_cell(row, col);
         // send draw calls again to update potentially paused canvas
@@ -100,6 +108,99 @@ canvas.addEventListener("mousemove", event => {
         drawCells();
     } else if (erasing) {
         universe.unset_cell(row, col);
+        drawGrid();
+        drawCells();
+    }
+});
+
+const spawnableSelector = document.getElementById("spawnable");
+const spawnables = {};
+const glider_cells = [
+    [-1, 0],
+    [0, 1],
+    [1, -1],
+    [1, 0],
+    [1, 1]
+];
+spawnables["glider"] = glider_cells;
+let gliderOption = new Option('Glider', 'glider');
+spawnableSelector.add(gliderOption);
+
+const square_cells = [
+    [0, 0],
+    [0, 1],
+    [1, 0],
+    [1, 1]
+];
+spawnables["square"] = square_cells;
+let squareOption = new Option('Square', 'square');
+spawnableSelector.add(squareOption);
+
+const pulsar_cells = [
+    [1, 2],
+    [1, 3],
+    [1, 4],
+    [1, 8],
+    [1, 9],
+    [1, 10],
+    [3, 0],
+    [3, 5],
+    [3, 7],
+    [3, 12],
+    [4, 0],
+    [4, 5],
+    [4, 7],
+    [4, 12],
+    [5, 0],
+    [5, 5],
+    [5, 7],
+    [5, 12],
+    [6, 2],
+    [6, 3],
+    [6, 4],
+    [6, 8],
+    [6, 9],
+    [6, 10],
+    [8, 2],
+    [8, 3],
+    [8, 4],
+    [8, 8],
+    [8, 9],
+    [8, 10],
+    [9, 0],
+    [9, 5],
+    [9, 7],
+    [9, 12],
+    [10, 0],
+    [10, 5],
+    [10, 7],
+    [10, 12],
+    [11, 0],
+    [11, 5],
+    [11, 7],
+    [11, 12],
+    [13, 2],
+    [13, 3],
+    [13, 4],
+    [13, 8],
+    [13, 9],
+    [13, 10]
+]
+spawnables["pulsar"] = pulsar_cells;
+let pulsarOption = new Option('Pulsar', 'pulsar');
+spawnableSelector.add(pulsarOption);
+
+canvas.addEventListener("mousedown", event => {
+    const rowcol = get_rowcol(event.clientX, event.clientY);
+    const row = rowcol[0];
+    const col = rowcol[1];
+    if (event.ctrlKey) {
+        spawnables[spawnableSelector.value].forEach(
+            x => universe.set_cell(
+                ((row + x[0]) % height + height) % height,
+                ((col + x[1]) % width + width) % width
+            )
+        )
         drawGrid();
         drawCells();
     }

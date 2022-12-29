@@ -15,12 +15,10 @@ macro_rules! log {
 }
 
 macro_rules! time {
-    ( $x:expr, $name:literal ) => {
-        {
-            let _timer = Timer::new($name);
-            $x
-        }
-    }
+    ( $x:expr, $name:literal ) => {{
+        let _timer = Timer::new($name);
+        $x
+    }};
 }
 
 pub struct Timer<'a> {
@@ -76,7 +74,11 @@ pub struct Universe {
 impl Universe {
     /// Convert a pair of row/column coordinates into an index into cells.
     fn get_idx(&self, row: u32, col: u32) -> usize {
-        (row * self.width + col) as usize
+        let mut idx = (row * self.width + col) as usize;
+        if idx >= (self.width * self.height) as usize {
+            idx %= (self.width * self.height) as usize;
+        }
+        idx
     }
 
     /// Convert an index into cells into a pair of row/column coordinates.
@@ -88,17 +90,9 @@ impl Universe {
     fn live_neighbours(&self, row: u32, column: u32) -> u8 {
         let mut count = 0;
 
-        let north = if row == 0 {
-            self.height - 1
-        } else {
-            row - 1
-        };
+        let north = if row == 0 { self.height - 1 } else { row - 1 };
 
-        let south = if row == self.height - 1 {
-            0
-        } else {
-            row + 1
-        };
+        let south = if row == self.height - 1 { 0 } else { row + 1 };
 
         let west = if column == 0 {
             self.width - 1
@@ -156,22 +150,25 @@ impl Universe {
     pub fn tick(&mut self) {
         let _timer = Timer::new("Universe::tick");
         let mut next = self.cells.clone();
-        time!({
-            for row in 0..self.height {
-                for col in 0..self.width {
-                    let idx = self.get_idx(row, col);
-                    let cell = &self.cells[idx];
-                    let ln = self.live_neighbours(row, col);
-                    next[idx] = match (cell, ln) {
-                        (Cell::Alive, x) if x < 2 => Cell::Dead,
-                        (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
-                        (Cell::Alive, x) if x > 3 => Cell::Dead,
-                        (Cell::Dead, 3) => Cell::Alive,
-                        (otherwise, _) => *otherwise,
-                    };
+        time!(
+            {
+                for row in 0..self.height {
+                    for col in 0..self.width {
+                        let idx = self.get_idx(row, col);
+                        let cell = &self.cells[idx];
+                        let ln = self.live_neighbours(row, col);
+                        next[idx] = match (cell, ln) {
+                            (Cell::Alive, x) if x < 2 => Cell::Dead,
+                            (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
+                            (Cell::Alive, x) if x > 3 => Cell::Dead,
+                            (Cell::Dead, 3) => Cell::Alive,
+                            (otherwise, _) => *otherwise,
+                        };
+                    }
                 }
-            }
-        }, "calculate next generation");
+            },
+            "calculate next generation"
+        );
         self.cells = next;
     }
 
