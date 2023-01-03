@@ -1,4 +1,4 @@
-import {Universe, Cell} from "wasm-game-of-life";
+import { Universe } from "wasm-game-of-life";
 import {memory} from "wasm-game-of-life/wasm_game_of_life_bg";
 
 const CELL_SIZE = 5; // px
@@ -6,9 +6,7 @@ const GRID_COLOR = "#CCCCCC";
 const DEAD_COLOR = "#FFFFFF";
 const ALIVE_COLOR = "#000000";
 
-const pre = document.getElementById("game-of-life-canvas");
-
-const universe = Universe.new_fancy();
+const universe = Universe.new_fancy(256, 256);
 const width = universe.width();
 const height = universe.height();
 
@@ -35,34 +33,41 @@ const drawGrid = () => {
     ctx.stroke();
 }
 
-const getIndex = (row, column) => {
-    return row * width + column;
-};
-
 const drawCells = () => {
+    const numCells = universe.num_active_cells();
     const cellsPtr = universe.cells();
-    const cells = new Uint8Array(memory.buffer, cellsPtr, width * height);
+    const cells = new Uint32Array(memory.buffer, cellsPtr, 2*numCells);
 
     ctx.beginPath();
 
-    for (let row = 0; row < height; row++) {
-        for (let col = 0; col < width; col++) {
-            const idx = getIndex(row, col);
+    // Fill with dead color
+    ctx.fillStyle = DEAD_COLOR;
 
-            ctx.fillStyle = cells[idx] === Cell.Dead
-                ? DEAD_COLOR
-                : ALIVE_COLOR;
-
-            ctx.fillRect(
-                col * (CELL_SIZE + 1) + 1,
-                row * (CELL_SIZE + 1) + 1,
-                CELL_SIZE,
-                CELL_SIZE
-            );
-        }
+    ctx.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+    // Paint in alive color
+    for (let i = 0; i < numCells; i++) {
+        ctx.fillStyle = ALIVE_COLOR;
+        let row = cells[2*i];
+        let col = cells[2*i+1];
+        ctx.fillRect(
+            col * (CELL_SIZE + 1) + 1,
+            row * (CELL_SIZE + 1) + 1,
+            CELL_SIZE,
+            CELL_SIZE
+        );
     }
 
     ctx.stroke();
+};
+
+const draw = () => {
+    drawCells();
+    drawGrid();
 };
 
 let painting = false;
@@ -104,12 +109,10 @@ canvas.addEventListener("mousemove", event => {
     if (painting) {
         universe.set_cell(row, col);
         // send draw calls again to update potentially paused canvas
-        drawGrid();
-        drawCells();
+        draw();
     } else if (erasing) {
         universe.unset_cell(row, col);
-        drawGrid();
-        drawCells();
+        draw();
     }
 });
 
@@ -201,8 +204,7 @@ canvas.addEventListener("mousedown", event => {
                 ((col + x[1]) % width + width) % width
             )
         )
-        drawGrid();
-        drawCells();
+        draw();
     }
 });
 
@@ -223,7 +225,7 @@ const pause = () => {
     paused = true;
 };
 
-playPauseButton.addEventListener("click", event => {
+playPauseButton.addEventListener("click", _ => {
     if (paused) {
         play();
     } else {
@@ -278,8 +280,7 @@ const renderLoop = () => {
     fps.render();
     universe.tick();
 
-    drawGrid();
-    drawCells();
+    draw();
 
     animationId = requestAnimationFrame(renderLoop);
 };
