@@ -35,7 +35,7 @@ const drawGrid = () => {
 
 const drawCells = () => {
     const numCells = universe.num_active_cells();
-    const cellsPtr = universe.cells();
+    const cellsPtr = universe.cells_to_paint();
     const cells = new Uint32Array(memory.buffer, cellsPtr, 2*numCells);
 
     ctx.beginPath();

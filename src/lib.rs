@@ -257,8 +257,9 @@ impl Universe {
         self.cells.len() as u32
     }
 
-    /// Update `to_paint` and return a raw pointer
-    pub fn cells(&mut self) -> *const u32 {
+    /// Update `to_paint` and return a raw pointer. Note that `to_paint` is stored as a flat vector
+    /// of (row, col) pairs.
+    pub fn cells_to_paint(&mut self) -> *const u32 {
         self.to_paint = self.cells.iter().fold(vec![], |mut acc, (&k, &v)| {
             acc.push(k.0);
             acc.push(k.1);
