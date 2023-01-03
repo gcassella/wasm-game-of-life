@@ -1,86 +1,36 @@
 <div align="center">
+  <h1><code>wasm-game-of-life</code></h1>
+  <strong>
 
-  <h1><code>wasm-pack-template</code></h1>
+Follow along with the [`rustwasm` tutorial](https://rustwasm.github.io/docs/book/game-of-life/hello-world.html) 
 
-  <strong>A template for kick starting a Rust and WebAssembly project using <a href="https://github.com/rustwasm/wasm-pack">wasm-pack</a>.</strong>
-
-  <p>
-    <a href="https://travis-ci.org/rustwasm/wasm-pack-template"><img src="https://img.shields.io/travis/rustwasm/wasm-pack-template.svg?style=flat-square" alt="Build Status" /></a>
-  </p>
-
-  <h3>
-    <a href="https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/index.html">Tutorial</a>
-    <span> | </span>
-    <a href="https://discordapp.com/channels/442252698964721669/443151097398296587">Chat</a>
-  </h3>
-
-  <sub>Built with 🦀🕸 by <a href="https://rustwasm.github.io/">The Rust and WebAssembly Working Group</a></sub>
+</strong>
 </div>
 
-## About
+## 📓 About
 
-[**📚 Read this template tutorial! 📚**][template-docs]
+Initially a follow-along repo for the Rust and WebAssembly book, implementing Conway's Game of Life with a Rust backend
+and JavaScript frontend. May or may not continue to be updated with newer features.
 
-This template is designed for compiling Rust libraries into WebAssembly and
-publishing the resulting package to NPM.
+Elements of the current version which are not included in the book:
 
-Be sure to check out [other `wasm-pack` tutorials online][tutorials] for other
-templates and usages of `wasm-pack`.
+- Store live cells using a `HashMap` instead of storing the entire universe as a `Vec<Cell>`
+  -  This is a bit slower (optimizations pending) for 'dense' universes but much, much faster for 'sparse' ones
+- Macro for `web-sys` timers, `time!(expr, name)`
+- Insert prefabricated patterns (square, glider, pulsar) with Ctrl+Click
 
-[tutorials]: https://rustwasm.github.io/docs/wasm-pack/tutorials/index.html
-[template-docs]: https://rustwasm.github.io/docs/wasm-pack/tutorials/npm-browser-packages/index.html
+## 🤓 Interesting Bits
 
-## 🚴 Usage
+The important code can be found in:
 
-### 🐑 Use `cargo generate` to Clone this Template
+ - `/src/lib.rs` - Rust backend for Game of Life
+ - `/www/index.js` - JavaScript frontend for rendering Game of Life to an HTML canvas
+ - `/www/index.html` - HTML DOM for rendering
 
-[Learn more about `cargo generate` here.](https://github.com/ashleygwilliams/cargo-generate)
-
-```
-cargo generate --git https://github.com/rustwasm/wasm-pack-template.git --name my-project
-cd my-project
-```
-
-### 🛠️ Build with `wasm-pack build`
+## ▶ Usage
 
 ```
 wasm-pack build
+cd www
+npm run start
 ```
-
-### 🔬 Test in Headless Browsers with `wasm-pack test`
-
-```
-wasm-pack test --headless --firefox
-```
-
-### 🎁 Publish to NPM with `wasm-pack publish`
-
-```
-wasm-pack publish
-```
-
-## 🔋 Batteries Included
-
-* [`wasm-bindgen`](https://github.com/rustwasm/wasm-bindgen) for communicating
-  between WebAssembly and JavaScript.
-* [`console_error_panic_hook`](https://github.com/rustwasm/console_error_panic_hook)
-  for logging panic messages to the developer console.
-* [`wee_alloc`](https://github.com/rustwasm/wee_alloc), an allocator optimized
-  for small code size.
-* `LICENSE-APACHE` and `LICENSE-MIT`: most Rust projects are licensed this way, so these are included for you
-
-## License
-
-Licensed under either of
-
-* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
-* MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-
-at your option.
-
-### Contribution
-
-Unless you explicitly state otherwise, any contribution intentionally
-submitted for inclusion in the work by you, as defined in the Apache-2.0
-license, shall be dual licensed as above, without any additional terms or
-conditions.
