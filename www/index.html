@@ -33,6 +33,10 @@
         z-index: 1;
       }
 
+      #grid-toggle {
+        z-index: 1;
+      }
+
       #game-of-life-canvas {
         position: absolute;
         left: 0;
@@ -47,6 +51,7 @@
   </head>
   <body>
   <button id="play-pause" oncontextmenu="event.preventDefault();"></button>
+  <input type="checkbox" id="grid-toggle">
   <div id="fps"></div>
   <select id="spawnable"></select>
   <canvas id="game-of-life-canvas" oncontextmenu="event.preventDefault();"></canvas>

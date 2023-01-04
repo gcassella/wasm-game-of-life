@@ -71,24 +71,8 @@ pub struct Universe {
 }
 
 impl Universe {
-    /// Return vector of coordinates neighbouring (row, col). Respects periodic boundary.
+    /// Return vector of coordinates neighbouring (row, col).
     fn neighbours(&self, row: i32, column: i32) -> Vec<(i32, i32)> {
-        // let north = if row == 0 { self.height - 1 } else { row - 1 };
-        //
-        // let south = if row == self.height - 1 { 0 } else { row + 1 };
-        //
-        // let west = if column == 0 {
-        //     self.width - 1
-        // } else {
-        //     column - 1
-        // };
-        //
-        // let east = if column == self.width - 1 {
-        //     0
-        // } else {
-        //     column + 1
-        // };
-
         let north = row - 1;
         let south = row + 1;
         let west = column - 1;
@@ -170,9 +154,9 @@ impl Universe {
     }
 
     /// Construct an empty universe
-    pub fn new(width: i32, height: i32) -> Universe {
+    pub fn new() -> Universe {
         utils::set_panic_hook();
-        log!("Initializing {}x{} universe", width, height);
+        log!("Initializing universe");
 
         Universe {
             cells: HashMap::new(),

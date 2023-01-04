@@ -1,22 +1,23 @@
 import {Universe} from "wasm-game-of-life";
 import {memory} from "wasm-game-of-life/wasm_game_of_life_bg";
 
-const GRID_COLOR = "#34de0d";
+// constants
+const GRID_COLOR = "#3c3d3c";
 const DEAD_COLOR = "#000000";
 const ALIVE_COLOR = "#58b056";
 const SCROLL_POWER = 30.0;
 
+// globals
 let x_offset = -210;
 let y_offset = -105;
 let display_cells = 256;
-
-let universe_x_cells = 210;
-let universe_y_cells = 210;
+let show_grid = false;
 
 const canvas = document.getElementById("game-of-life-canvas");
 const ctx = canvas.getContext('2d');
+const grid_toggle = document.getElementById("grid-toggle");
 
-const universe = Universe.new_fancy(universe_x_cells, universe_y_cells);
+const universe = Universe.new();
 
 /* Drawing */
 
@@ -105,7 +106,9 @@ const resizeCanvasToDisplaySize = () => {
 const draw = () => {
     resizeCanvasToDisplaySize();
     drawCells();
-    // drawGrid();
+    if (show_grid) {
+        drawGrid();
+    }
 };
 
 const get_row_col = (x, y) => {
@@ -235,6 +238,7 @@ canvas.addEventListener("mousemove", event => {
 
         x_offset = dragStart.x - dragEnd.x;
         y_offset = dragStart.y - dragEnd.y;
+        draw();
     }
 });
 
@@ -289,6 +293,11 @@ canvas.addEventListener("wheel", event => {
     event.preventDefault();
     display_cells += Math.ceil(SCROLL_POWER * Math.tanh(SCROLL_POWER * event.deltaY));
     display_cells = Math.max(1, display_cells);
+    draw();
+});
+
+grid_toggle.addEventListener('click', () => {
+    show_grid = !show_grid;
     draw();
 });
 
