@@ -18,6 +18,9 @@ Elements of the current version which are not included in the book:
   -  This is a bit slower (optimizations pending) for 'dense' universes but much, much faster for 'sparse' ones
 - Macro for `web-sys` timers, `time!(expr, name)`
 - Insert prefabricated patterns (square, glider, pulsar) with Ctrl+Click
+- Open boundary conditions (true infinite universe)
+  - Drag-scroll with Shift+Click
+  - Zoom with mouse wheel
 
 ## 🤓 Interesting Bits
 
