@@ -8,17 +8,40 @@
         position: absolute;
         top: 0;
         left: 0;
+        margin: 0;
         width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column-reverse;
-        align-items: center;
-        justify-content: center;
+        align-items: start;
+        justify-content: start;
+        overflow: hidden; /* Hide scrollbars */
       }
 
       #fps {
         white-space: pre;
         font-family: monospace;
+        color: azure;
+        z-index: 1;
+      }
+
+      #spawnable {
+        z-index: 1;
+      }
+
+      #play-pause {
+        z-index: 1;
+      }
+
+      #game-of-life-canvas {
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 0;
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
       }
     </style>
   </head>
