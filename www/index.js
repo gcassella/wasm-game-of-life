@@ -1,33 +1,47 @@
-import { Universe } from "wasm-game-of-life";
+import {Universe} from "wasm-game-of-life";
 import {memory} from "wasm-game-of-life/wasm_game_of_life_bg";
 
-const CELL_SIZE = 5; // px
-const GRID_COLOR = "#CCCCCC";
-const DEAD_COLOR = "#FFFFFF";
-const ALIVE_COLOR = "#000000";
+const GRID_COLOR = "#34de0d";
+const DEAD_COLOR = "#000000";
+const ALIVE_COLOR = "#58b056";
+const SCROLL_POWER = 30.0;
 
-const universe = Universe.new_fancy(256, 256);
-const width = universe.width();
-const height = universe.height();
+let x_offset = -210;
+let y_offset = -105;
+let display_cells = 256;
+
+let universe_x_cells = 210;
+let universe_y_cells = 210;
 
 const canvas = document.getElementById("game-of-life-canvas");
-canvas.height = (CELL_SIZE + 1) * height + 1;
-canvas.width = (CELL_SIZE + 1) * width + 1;
 const ctx = canvas.getContext('2d');
+
+const universe = Universe.new_fancy(universe_x_cells, universe_y_cells);
+
+/* Drawing */
+
+const getCellSize = () => {
+    return canvas.height / display_cells + 1;
+}
 
 const drawGrid = () => {
     ctx.beginPath();
     ctx.strokeStyle = GRID_COLOR;
+
+    let scaled_cell_size = getCellSize();
+    let fractional_x_offset = x_offset % (scaled_cell_size + 1);
+    let fractional_y_offset = y_offset % (scaled_cell_size + 1);
+
     // Vertical lines.
-    for (let i = 0; i <= width; i++) {
-        ctx.moveTo(i * (CELL_SIZE + 1) + 1, 0);
-        ctx.lineTo(i * (CELL_SIZE + 1) + 1, canvas.height);
+    for (let i = -2; i <= canvas.width / scaled_cell_size + 2; i++) {
+        ctx.moveTo(i * (scaled_cell_size + 1) + 1 - fractional_x_offset, -fractional_y_offset);
+        ctx.lineTo(i * (scaled_cell_size + 1) + 1 - fractional_x_offset, canvas.height - fractional_y_offset);
     }
 
     // Horizontal lines.
-    for (let j = 0; j <= height; j++) {
-        ctx.moveTo(0,         j * (CELL_SIZE + 1) + 1);
-        ctx.lineTo(canvas.width, j * (CELL_SIZE + 1) + 1);
+    for (let j = -2; j <= canvas.height / scaled_cell_size + 2; j++) {
+        ctx.moveTo(-fractional_x_offset, j * (scaled_cell_size + 1) + 1 - fractional_y_offset);
+        ctx.lineTo(canvas.width - fractional_x_offset, j * (scaled_cell_size + 1) + 1 - fractional_y_offset);
     }
 
     ctx.stroke();
@@ -36,7 +50,8 @@ const drawGrid = () => {
 const drawCells = () => {
     const numCells = universe.num_active_cells();
     const cellsPtr = universe.cells_to_paint();
-    const cells = new Uint32Array(memory.buffer, cellsPtr, 2*numCells);
+    const cells = new Int32Array(memory.buffer, cellsPtr, 2 * numCells);
+    let scaled_cell_size = getCellSize();
 
     ctx.beginPath();
 
@@ -52,42 +67,50 @@ const drawCells = () => {
     // Paint in alive color
     for (let i = 0; i < numCells; i++) {
         ctx.fillStyle = ALIVE_COLOR;
-        let row = cells[2*i];
-        let col = cells[2*i+1];
-        ctx.fillRect(
-            col * (CELL_SIZE + 1) + 1,
-            row * (CELL_SIZE + 1) + 1,
-            CELL_SIZE,
-            CELL_SIZE
-        );
+        let row = cells[2 * i];
+        let col = cells[2 * i + 1];
+        let x_pos = col * (scaled_cell_size + 1) + 1 - x_offset;
+        let y_pos = row * (scaled_cell_size + 1) + 1 - y_offset
+
+        if ((x_pos < canvas.width) || (y_pos < canvas.height)) {
+            ctx.fillRect(
+                x_pos,
+                y_pos,
+                scaled_cell_size,
+                scaled_cell_size
+            );
+        }
     }
 
     ctx.stroke();
 };
 
+// from : https://webglfundamentals.org/webgl/lessons/webgl-resizing-the-canvas.html
+const resizeCanvasToDisplaySize = () => {
+    // Lookup the size the browser is displaying the canvas in CSS pixels.
+    let displayWidth = canvas.clientWidth;
+    let displayHeight = canvas.clientHeight;
+
+    // Check if the canvas is not the same size.
+    let needResize = canvas.width !== displayWidth ||
+        canvas.height !== displayHeight;
+
+    if (needResize) {
+        // Make the canvas the same size
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+    }
+}
+
 const draw = () => {
+    resizeCanvasToDisplaySize();
     drawCells();
-    drawGrid();
+    // drawGrid();
 };
 
-let painting = false;
-let erasing = false;
-addEventListener('mousedown', event => {
-    if ((event.button === 0) && (!painting)) {
-        painting = true;
-    } else if ((event.button === 2) && (!erasing)) {
-        erasing = true;
-    }
-});
-addEventListener('mouseup', event => {
-    if ((event.button === 0) && (painting)) {
-        painting = false;
-    } else if ((event.button === 2) && (erasing)) {
-        erasing = false;
-    }
-});
+const get_row_col = (x, y) => {
+    let scaled_cell_size = getCellSize();
 
-const get_rowcol = (x, y) => {
     const boundingRect = canvas.getBoundingClientRect();
 
     const scaleX = canvas.width / boundingRect.width;
@@ -96,25 +119,13 @@ const get_rowcol = (x, y) => {
     const canvasLeft = (x - boundingRect.left) * scaleX;
     const canvasTop = (y - boundingRect.top) * scaleY;
 
-    const row = Math.min(Math.floor(canvasTop / (CELL_SIZE + 1)), height - 1);
-    const col = Math.min(Math.floor(canvasLeft / (CELL_SIZE + 1)), width - 1);
+    const row = Math.floor(canvasTop / (scaled_cell_size + 1));
+    const col = Math.floor(canvasLeft / (scaled_cell_size + 1));
 
     return [row, col]
 }
 
-canvas.addEventListener("mousemove", event => {
-    const rowcol = get_rowcol(event.clientX, event.clientY);
-    const row = rowcol[0];
-    const col = rowcol[1];
-    if (painting) {
-        universe.set_cell(row, col);
-        // send draw calls again to update potentially paused canvas
-        draw();
-    } else if (erasing) {
-        universe.unset_cell(row, col);
-        draw();
-    }
-});
+/* Spawnables */
 
 const spawnableSelector = document.getElementById("spawnable");
 const spawnables = {};
@@ -193,20 +204,95 @@ spawnables["pulsar"] = pulsar_cells;
 let pulsarOption = new Option('Pulsar', 'pulsar');
 spawnableSelector.add(pulsarOption);
 
+let dragStart = {
+    x: 0,
+    y: 0
+};
+let dragEnd = {
+    x: 0,
+    y: 0
+};
+
+/* Event listeners */
+
+let painting = false;
+let erasing = false;
+let dragging = false;
+
+canvas.addEventListener("mousemove", event => {
+    const row_col = get_row_col(event.clientX + x_offset, event.clientY + y_offset);
+    const row = row_col[0];
+    const col = row_col[1];
+    if (painting) {
+        universe.set_cell(row, col);
+        // send draw calls again to update potentially paused canvas
+        draw();
+    } else if (erasing) {
+        universe.unset_cell(row, col);
+        draw();
+    } else if (dragging && event.shiftKey) {
+        dragEnd = {x: event.clientX, y: event.clientY};
+
+        x_offset = dragStart.x - dragEnd.x;
+        y_offset = dragStart.y - dragEnd.y;
+    }
+});
+
+canvas.addEventListener('mouseup', event => {
+    const row_col = get_row_col(event.clientX + x_offset, event.clientY + y_offset);
+    const row = row_col[0];
+    const col = row_col[1];
+    if (event.button === 0) {
+        if (painting) {
+            universe.set_cell(row, col);
+            draw();
+            painting = false;
+        }
+        if (dragging) {
+            dragging = false;
+        }
+    } else if ((event.button === 2) && (erasing)) {
+        universe.unset_cell(row, col);
+        draw();
+        erasing = false;
+    }
+});
+
 canvas.addEventListener("mousedown", event => {
-    const rowcol = get_rowcol(event.clientX, event.clientY);
-    const row = rowcol[0];
-    const col = rowcol[1];
-    if (event.ctrlKey) {
+    const row_col = get_row_col(event.clientX + x_offset, event.clientY + y_offset);
+    const row = row_col[0];
+    const col = row_col[1];
+
+    if (event.ctrlKey) {        // spawnables modifier
         spawnables[spawnableSelector.value].forEach(
             x => universe.set_cell(
-                ((row + x[0]) % height + height) % height,
-                ((col + x[1]) % width + width) % width
+                row + x[0],
+                col + x[1]
             )
         )
         draw();
+    } else if (event.shiftKey) { // drag modifier
+        // event.clientX(Y) act in Canvas space, so we have to include the current offset
+        dragStart = {x: event.clientX + x_offset, y: event.clientY + y_offset};
+        dragEnd = dragStart;
+        dragging = true;
+    } else {
+        if ((event.button === 0) && (!painting)) {
+            painting = true;
+        } else if ((event.button === 2) && (!erasing)) {
+            erasing = true;
+        }
     }
 });
+
+canvas.addEventListener("wheel", event => {
+    event.preventDefault();
+    display_cells += Math.ceil(SCROLL_POWER * Math.tanh(SCROLL_POWER * event.deltaY));
+    display_cells = Math.max(1, display_cells);
+    draw();
+});
+
+/* Animation logic */
 
 let paused = false;
 let animationId = null;
@@ -267,12 +353,12 @@ const fps = new class {
 
         // Render the statistics.
         this.fps.textContent = `
-Frames per Second:
-         latest = ${Math.round(fps)}
-avg of last 100 = ${Math.round(mean)}
-min of last 100 = ${Math.round(min)}
-max of last 100 = ${Math.round(max)}
-`.trim();
+                    Frames per Second:
+                             latest = ${Math.round(fps)}
+                    avg of last 100 = ${Math.round(mean)}
+                    min of last 100 = ${Math.round(min)}
+                    max of last 100 = ${Math.round(max)}
+                    `.trim();
     }
 };
 

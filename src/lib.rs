@@ -66,30 +66,33 @@ impl Cell {
 
 #[wasm_bindgen]
 pub struct Universe {
-    width: u32,
-    height: u32,
-    cells: HashMap<(u32, u32), Cell>,
-    to_paint: Vec<u32>,
+    cells: HashMap<(i32, i32), Cell>,
+    to_paint: Vec<i32>,
 }
 
 impl Universe {
     /// Return vector of coordinates neighbouring (row, col). Respects periodic boundary.
-    fn neighbours(&self, row: u32, column: u32) -> Vec<(u32, u32)> {
-        let north = if row == 0 { self.height - 1 } else { row - 1 };
+    fn neighbours(&self, row: i32, column: i32) -> Vec<(i32, i32)> {
+        // let north = if row == 0 { self.height - 1 } else { row - 1 };
+        //
+        // let south = if row == self.height - 1 { 0 } else { row + 1 };
+        //
+        // let west = if column == 0 {
+        //     self.width - 1
+        // } else {
+        //     column - 1
+        // };
+        //
+        // let east = if column == self.width - 1 {
+        //     0
+        // } else {
+        //     column + 1
+        // };
 
-        let south = if row == self.height - 1 { 0 } else { row + 1 };
-
-        let west = if column == 0 {
-            self.width - 1
-        } else {
-            column - 1
-        };
-
-        let east = if column == self.width - 1 {
-            0
-        } else {
-            column + 1
-        };
+        let north = row - 1;
+        let south = row + 1;
+        let west = column - 1;
+        let east = column + 1;
 
         let nw = (north, west);
         let n = (north, column);
@@ -104,7 +107,7 @@ impl Universe {
     }
 
     /// Count the number of live neighbours of (row, col)
-    fn live_neighbours(&self, row: u32, column: u32) -> u8 {
+    fn live_neighbours(&self, row: i32, column: i32) -> u8 {
         let mut count = 0;
 
         for neighbour in self.neighbours(row, column) {
@@ -119,7 +122,7 @@ impl Universe {
     }
 
     /// Given a list of cell coordinates, set all listed cells to Alive
-    pub fn set_cells(&mut self, cells: &[(u32, u32)]) {
+    pub fn set_cells(&mut self, cells: &[(i32, i32)]) {
         for cell in cells.iter().cloned() {
             self.cells.insert(cell, Cell::Alive);
         }
@@ -136,7 +139,7 @@ impl Universe {
     pub fn tick(&mut self) {
         let _timer = Timer::new("Universe::tick");
         // Populate with boundary set
-        let mut check_cells: HashMap<(u32, u32), Cell> = HashMap::new();
+        let mut check_cells: HashMap<(i32, i32), Cell> = HashMap::new();
         for (cell, v) in self.cells.iter() {
             check_cells.insert(*cell, *v);
             for neighbour in self.neighbours(cell.0, cell.1) {
@@ -146,7 +149,7 @@ impl Universe {
             }
         }
         // Apply GoL rules
-        let next_cells: HashMap<(u32, u32), Cell> = time!(
+        let next_cells: HashMap<(i32, i32), Cell> = time!(
             {
                 check_cells
                     .iter()
@@ -167,20 +170,18 @@ impl Universe {
     }
 
     /// Construct an empty universe
-    pub fn new(width: u32, height: u32) -> Universe {
+    pub fn new(width: i32, height: i32) -> Universe {
         utils::set_panic_hook();
         log!("Initializing {}x{} universe", width, height);
 
         Universe {
-            width,
-            height,
             cells: HashMap::new(),
             to_paint: vec![],
         }
     }
 
     /// Construct a universe with an interesting pattern
-    pub fn new_fancy(width: u32, height: u32) -> Universe {
+    pub fn new_fancy(width: i32, height: i32) -> Universe {
         utils::set_panic_hook();
         log!("Initializing fancy {}x{} universe", width, height);
         let mut curr_cells = HashMap::new();
@@ -198,44 +199,32 @@ impl Universe {
         }
 
         Universe {
-            width,
-            height,
             cells: curr_cells,
             to_paint: vec![],
         }
     }
 
     /// Utility for checking a cell is inside our universe
-    fn check_valid_cell(&self, row: u32, col: u32) {
-        if row > self.height || col > self.width {
-            panic!()
-        }
+    fn check_valid_cell(&self, row: i32, col: i32) {
+        // if row > self.height || col > self.width {
+        //     panic!()
+        // }
     }
 
-    pub fn unset_cell(&mut self, row: u32, col: u32) {
-        self.check_valid_cell(row, col);
-        self.cells.insert((row, col), Cell::Dead);
+    pub fn unset_cell(&mut self, row: i32, col: i32) {
+        // self.check_valid_cell(row, col);
+        self.cells.remove(&(row, col));
     }
 
-    pub fn set_cell(&mut self, row: u32, col: u32) {
-        self.check_valid_cell(row, col);
+    pub fn set_cell(&mut self, row: i32, col: i32) {
+        // self.check_valid_cell(row, col);
         self.cells.insert((row, col), Cell::Alive);
     }
 
-    pub fn toggle_cell(&mut self, row: u32, col: u32) {
-        self.check_valid_cell(row, col);
+    pub fn toggle_cell(&mut self, row: i32, col: i32) {
+        // self.check_valid_cell(row, col);
         self.cells
             .insert((row, col), Cell::toggle(self.cells[&(row, col)]));
-    }
-
-    /// Getter for width
-    pub fn width(&self) -> u32 {
-        self.width
-    }
-
-    /// Getter for height
-    pub fn height(&self) -> u32 {
-        self.height
     }
 
     /// Getter for a count of alive cells
@@ -259,7 +248,7 @@ impl Universe {
 
     /// Update `to_paint` and return a raw pointer. Note that `to_paint` is stored as a flat vector
     /// of (row, col) pairs.
-    pub fn cells_to_paint(&mut self) -> *const u32 {
+    pub fn cells_to_paint(&mut self) -> *const i32 {
         self.to_paint = self.cells.iter().fold(vec![], |mut acc, (&k, &v)| {
             acc.push(k.0);
             acc.push(k.1);
