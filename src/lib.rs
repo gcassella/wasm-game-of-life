@@ -113,6 +113,12 @@ impl Universe {
     }
 }
 
+impl Default for Universe {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[wasm_bindgen]
 impl Universe {
     /// Update `cells` according to Game of Life update rules
@@ -127,9 +133,7 @@ impl Universe {
         for (cell, v) in self.cells.iter() {
             check_cells.insert(*cell, *v);
             for neighbour in self.neighbours(cell.0, cell.1) {
-                if !check_cells.contains_key(&neighbour) {
-                    check_cells.insert(neighbour, Cell::Dead);
-                }
+                check_cells.entry(neighbour).or_insert(Cell::Dead);
             }
         }
         // Apply GoL rules
@@ -150,7 +154,7 @@ impl Universe {
             },
             "calculate next generation"
         );
-        self.cells = next_cells.clone();
+        self.cells = next_cells;
     }
 
     /// Construct an empty universe
@@ -186,13 +190,6 @@ impl Universe {
             cells: curr_cells,
             to_paint: vec![],
         }
-    }
-
-    /// Utility for checking a cell is inside our universe
-    fn check_valid_cell(&self, row: i32, col: i32) {
-        // if row > self.height || col > self.width {
-        //     panic!()
-        // }
     }
 
     pub fn unset_cell(&mut self, row: i32, col: i32) {
@@ -233,7 +230,7 @@ impl Universe {
     /// Update `to_paint` and return a raw pointer. Note that `to_paint` is stored as a flat vector
     /// of (row, col) pairs.
     pub fn cells_to_paint(&mut self) -> *const i32 {
-        self.to_paint = self.cells.iter().fold(vec![], |mut acc, (&k, &v)| {
+        self.to_paint = self.cells.iter().fold(vec![], |mut acc, (&k, _)| {
             acc.push(k.0);
             acc.push(k.1);
             acc
