@@ -2,14 +2,15 @@
   <h1><code>wasm-game-of-life</code></h1>
   <strong>
 
-Follow along with the [`rustwasm` tutorial](https://rustwasm.github.io/docs/book/game-of-life/hello-world.html) 
+Following the [`rustwasm` tutorial](https://rustwasm.github.io/docs/book/game-of-life/hello-world.html)
 
 </strong>
 </div>
 
 ## 📓 About
 
-Initially a follow-along repo for the Rust and WebAssembly book, implementing Conway's Game of Life with a Rust backend
+Initially repo containing my code following along with the for the Rust and WebAssembly book, implementing Conway's Game
+of Life with a Rust backend
 and JavaScript frontend. May or may not continue to be updated with newer features.
 
 Elements of the current version which are not included in the book:
