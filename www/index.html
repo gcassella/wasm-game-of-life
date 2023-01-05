@@ -12,7 +12,7 @@
         width: 100%;
         height: 100%;
         display: flex;
-        flex-direction: column-reverse;
+        flex-direction: column;
         align-items: start;
         justify-content: start;
         overflow: hidden; /* Hide scrollbars */
@@ -25,11 +25,18 @@
         z-index: 1;
       }
 
+      label {
+        white-space: pre;
+        font-family: monospace;
+        color: azure;
+        z-index: 1;
+      }
+
       #spawnable {
         z-index: 1;
       }
 
-      #play-pause {
+      #buttons {
         z-index: 1;
       }
 
@@ -50,8 +57,14 @@
     </style>
   </head>
   <body>
-  <button id="play-pause" oncontextmenu="event.preventDefault();"></button>
-  <input type="checkbox" id="grid-toggle">
+  <div id="buttons">
+    <button id="play-pause" oncontextmenu="event.preventDefault();"></button>
+    <button id="clear" oncontextmenu="event.preventDefault();">❌</button>
+  </div>
+
+
+  <label>Toggle Grid<input type="checkbox" id="grid-toggle"></label>
+  <label>FPS Limiter (0 for no limit)<input id="fps-limiter" type="number" min="0" max="160" value="60"></label>
   <div id="fps"></div>
   <select id="spawnable"></select>
   <canvas id="game-of-life-canvas" oncontextmenu="event.preventDefault();"></canvas>

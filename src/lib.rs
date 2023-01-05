@@ -240,4 +240,9 @@ impl Universe {
         });
         self.to_paint.as_ptr()
     }
+
+    /// Clear all cells
+    pub fn clear(&mut self) {
+        self.cells.clear();
+    }
 }

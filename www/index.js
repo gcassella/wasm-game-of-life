@@ -12,10 +12,14 @@ let x_offset = -210;
 let y_offset = -105;
 let display_cells = 256;
 let show_grid = false;
+let fps_limit = 60;
 
 const canvas = document.getElementById("game-of-life-canvas");
 const ctx = canvas.getContext('2d');
 const grid_toggle = document.getElementById("grid-toggle");
+const fps_limiter = document.getElementById("fps-limiter")
+const play_pause_button = document.getElementById("play-pause");
+const clear_button = document.getElementById("clear");
 
 const universe = Universe.new();
 
@@ -301,26 +305,33 @@ grid_toggle.addEventListener('click', () => {
     draw();
 });
 
+fps_limiter.addEventListener('input', () => {
+    fps_limit = fps_limiter.value;
+})
+
 /* Animation logic */
 
 let paused = false;
 let animationId = null;
 
-const playPauseButton = document.getElementById("play-pause");
+clear_button.addEventListener("click", () => {
+    universe.clear();
+    draw();
+});
 
 const play = () => {
     paused = false;
-    playPauseButton.textContent = "⏸";
+    play_pause_button.textContent = "⏸";
     requestAnimationFrame(renderLoop);
 }
 
 const pause = () => {
-    playPauseButton.textContent = "▶";
+    play_pause_button.textContent = "▶";
     cancelAnimationFrame(animationId);
     paused = true;
 };
 
-playPauseButton.addEventListener("click", _ => {
+play_pause_button.addEventListener("click", _ => {
     if (paused) {
         play();
     } else {
@@ -371,11 +382,25 @@ const fps = new class {
     }
 };
 
-const renderLoop = () => {
-    fps.render();
-    universe.tick();
+let last = performance.now();
 
-    draw();
+const renderLoop = () => {
+    const now = performance.now();
+
+
+    if (fps_limit > 0) {
+        document.getElementById("fps").textContent = "";
+        if (now - last > 1000 / fps_limit) {
+            // only draw at fps intervals
+            universe.tick();
+            draw();
+            last = now;
+        }
+    } else {
+        universe.tick();
+        draw();
+        fps.render();
+    }
 
     animationId = requestAnimationFrame(renderLoop);
 };
