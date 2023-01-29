@@ -1,6 +1,16 @@
 import {Universe} from "wasm-game-of-life";
 import {memory} from "wasm-game-of-life/wasm_game_of_life_bg";
 
+// Resizing stuff for CSS of UI elements
+
+const resizeOps = () => {
+    document.documentElement.style.setProperty("--vh", window.innerHeight * 0.01 + "px");
+};
+
+resizeOps();
+window.addEventListener("resize", resizeOps);
+
+
 // constants
 const GRID_COLOR = "#3c3d3c";
 const DEAD_COLOR = "#000000";
@@ -307,6 +317,61 @@ grid_toggle.addEventListener('click', () => {
 
 fps_limiter.addEventListener('input', () => {
     fps_limit = fps_limiter.value;
+})
+
+const getTouchMods = (event) => {
+    if (event.targetTouches.length === 2) {
+        return {
+            shiftKey: true,
+            ctrlKey: false
+        }
+    } else if (event.targetTouches.length === 3) {
+        return {
+            shiftKey: false,
+            ctrlKey: true
+        }
+    } else {
+        return {
+            shiftKey: false,
+            ctrlKey: false,
+        }
+    }
+};
+
+canvas.addEventListener('touchstart', (event) => {
+    event.preventDefault();
+    console.log(event);
+    const touchMods = getTouchMods(event);
+    const mouseEvent = new MouseEvent("mousedown", {
+        clientX: event.touches[0].clientX,
+        clientY: event.touches[0].clientY,
+        ctrlKey: touchMods.ctrlKey,
+        shiftKey: touchMods.shiftKey
+    });
+    canvas.dispatchEvent(mouseEvent);
+
+});
+
+canvas.addEventListener('touchend', (event) => {
+    event.preventDefault();
+    const touchMods = getTouchMods(event);
+    const mouseEvent = new MouseEvent("mouseup", {
+        ctrlKey: touchMods.ctrlKey,
+        shiftKey: touchMods.shiftKey
+    });
+    canvas.dispatchEvent(mouseEvent);
+});
+
+canvas.addEventListener('touchmove', (event) => {
+    event.preventDefault();
+    const touchMods = getTouchMods(event);
+    const mouseEvent = new MouseEvent("mousemove", {
+        clientX: event.touches[0].clientX,
+        clientY: event.touches[0].clientY,
+        ctrlKey: touchMods.ctrlKey,
+        shiftKey: touchMods.shiftKey
+    });
+    canvas.dispatchEvent(mouseEvent);
 })
 
 /* Animation logic */
