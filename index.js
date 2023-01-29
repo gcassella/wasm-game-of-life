@@ -1,5 +1,7 @@
-import {Universe} from "wasm-game-of-life";
-import {memory} from "wasm-game-of-life/wasm_game_of_life_bg";
+import init, {Universe} from "./pkg/wasm_game_of_life.js";
+
+const wasm = await init();
+const memory = wasm.memory;
 
 // Resizing stuff for CSS of UI elements
 
